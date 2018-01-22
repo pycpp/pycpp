@@ -26,3 +26,11 @@
 	path = test/system
 	url = https://github.com/pycpp/system-test.git
 	branch = master
+[submodule "test/stl"]
+	path = test/stl
+	url = https://github.com/pycpp/stl-test.git
+	branch = master
+[submodule "pycpp/stl"]
+	path = pycpp/stl
+	url = https://github.com/pycpp/stl.git
+	branch = master

@@ -184,6 +184,7 @@ configure_file(
 set(CORE_MODULES
     "preprocessor"
     "system"
+#    "stl"
 )
 
 foreach(module ${CORE_MODULES})
@@ -541,6 +542,14 @@ set(HEADER_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/system/sys/stat.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/system/sys/mman.h"
 
+    # STL
+    "${CMAKE_CURRENT_BINARY_DIR}/include/pycpp/stl.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/container/compressed_pair.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/container/forward_list.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/is_safe_overload.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/is_swappable.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/is_trivial.h"
+
 # TODO: restore
 #    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/algorithm.h"
 #    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/algorithm/interpolation_search.h"
@@ -752,6 +761,8 @@ set(SOURCE_FILES
     # SYSTEM
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/system/windows.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/system/sys/mman.cc"
+
+    # STL
 
 # TODO: restore
 #    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/allocator/crt.cc"
