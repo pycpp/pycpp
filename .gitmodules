@@ -18,3 +18,11 @@
 	path = third_party/benchmark
 	url = https://github.com/pycpp/benchmark.git
 	branch = master
+[submodule "pycpp/system"]
+	path = pycpp/system
+	url = https://github.com/pycpp/system.git
+	branch = master
+[submodule "test/system"]
+	path = test/system
+	url = https://github.com/pycpp/system-test.git
+	branch = master

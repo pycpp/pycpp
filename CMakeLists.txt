@@ -181,10 +181,17 @@ configure_file(
   "${CMAKE_CURRENT_BINARY_DIR}/include/pycpp/config.h"
 )
 
-configure_file(
-  "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/preprocessor/module.h.in"
-  "${CMAKE_CURRENT_BINARY_DIR}/include/pycpp/preprocessor.h"
+set(CORE_MODULES
+    "preprocessor"
+    "system"
 )
+
+foreach(module ${CORE_MODULES})
+    configure_file(
+      "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/${module}/module.h.in"
+      "${CMAKE_CURRENT_BINARY_DIR}/include/pycpp/${module}.h"
+    )
+endforeach()
 
 # EXTERNAL
 # --------
@@ -528,8 +535,11 @@ set(HEADER_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/preprocessor/tls.h"
 
     # SYSTEM
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/system/errno.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/system/sys/stat.h"
+    "${CMAKE_CURRENT_BINARY_DIR}/include/pycpp/system.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/system/errno.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/system/windows.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/system/sys/stat.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/system/sys/mman.h"
 
 # TODO: restore
 #    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/algorithm.h"
@@ -738,6 +748,10 @@ set(HEADER_FILES
 set(SOURCE_FILES
     # PREPROCESSOR
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/preprocessor/byteorder.cc"
+
+    # SYSTEM
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/system/windows.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/system/sys/mman.cc"
 
 # TODO: restore
 #    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/allocator/crt.cc"
@@ -1131,6 +1145,12 @@ set(TEST_FILES
     test/preprocessor/processor.cc
     test/preprocessor/os.cc
     test/preprocessor/tls.cc
+
+    # SYSTEM
+    test/system/errno.cc
+    test/system/windows.cc
+    test/system/sys/stat.cc
+    test/system/sys/mman.cc
 
 # TODO: restore
 #    test/algorithm/interpolation_search.cc
