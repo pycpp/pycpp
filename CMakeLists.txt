@@ -184,7 +184,7 @@ configure_file(
 set(CORE_MODULES
     "preprocessor"
     "system"
-#    "stl"
+    "stl"
 )
 
 foreach(module ${CORE_MODULES})
@@ -1162,6 +1162,9 @@ set(TEST_FILES
     test/system/windows.cc
     test/system/sys/stat.cc
     test/system/sys/mman.cc
+
+    # STL
+    test/stl/forward_list.cc
 
 # TODO: restore
 #    test/algorithm/interpolation_search.cc
