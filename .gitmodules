@@ -1,0 +1,20 @@
+[submodule "test/preprocessor"]
+	path = test/preprocessor
+	url = https://github.com/pycpp/preprocessor-test.git
+	branch = master
+[submodule "pycpp/preprocessor"]
+	path = pycpp/preprocessor
+	url = https://github.com/pycpp/preprocessor.git
+	branch = master
+[submodule "third_party/warnings"]
+	path = third_party/warnings
+	url = https://github.com/pycpp/warnings.git
+	branch = master
+[submodule "third_party/googletest"]
+	path = third_party/googletest
+	url = https://github.com/pycpp/googletest.git
+	branch = master
+[submodule "third_party/benchmark"]
+	path = third_party/benchmark
+	url = https://github.com/pycpp/benchmark.git
+	branch = master
