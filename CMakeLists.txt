@@ -533,6 +533,7 @@ set(HEADER_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/preprocessor/os.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/preprocessor/parallel.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/preprocessor/processor.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/preprocessor/stdint.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/preprocessor/tls.h"
 
     # SYSTEM
@@ -543,12 +544,59 @@ set(HEADER_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/system/sys/mman.h"
 
     # STL
+    # TODO: add a lot more....
+    # Only add once you have unittests
     "${CMAKE_CURRENT_BINARY_DIR}/include/pycpp/stl.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/container/compressed_pair.h"
+#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/container/compressed_pair.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/array.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/atomic.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/chrono.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/chrono/abs.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/chrono/ceil.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/chrono/floor.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/chrono/round.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/complex.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/container/forward_list.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/execution.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/forward_list.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/future.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/initializer_list.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/iomanip.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/iomanip/quoted.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/ios.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/ios/save_flags.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/iosfwd.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/iterator.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/iterator/cbegin.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/iterator/cend.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/iterator/make_reverse_iterator.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/iterator/rbegin.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/iterator/rend.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/checked_delete.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/ratio.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/thread/checked_thread.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/typeinfo.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/typeinfo/type_info_wrapper.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/any_overload.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/endian.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/has_reallocate.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/identity.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/is_aggregate.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/is_complete.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/is_duration.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/is_final.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/is_invocable.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/is_iterator.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/is_reference_wrapper.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/is_relocatable.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/is_safe_overload.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/is_swappable.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/is_trivial.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/logical.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/nat.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/remove_cvref.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/void_t.h"
 
 # TODO: restore
 #    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/algorithm.h"
@@ -1152,9 +1200,10 @@ set(TEST_FILES
     test/preprocessor/architecture.cc
     test/preprocessor/byteorder.cc
     test/preprocessor/compiler.cc
+    test/preprocessor/os.cc
     test/preprocessor/parallel.cc
     test/preprocessor/processor.cc
-    test/preprocessor/os.cc
+    test/preprocessor/stdint.cc
     test/preprocessor/tls.cc
 
     # SYSTEM
@@ -1164,7 +1213,56 @@ set(TEST_FILES
     test/system/sys/mman.cc
 
     # STL
+    # TODO: add a lot
+    # Only add once you have unittests
+    test/stl/array.cc
+    test/stl/atomic.cc
+    test/stl/chrono.cc
+    test/stl/chrono/abs.cc
+    test/stl/chrono/ceil.cc
+    test/stl/chrono/floor.cc
+    test/stl/chrono/round.cc
+    test/stl/complex.cc
+    test/stl/execution.cc
     test/stl/forward_list.cc
+    test/stl/future.cc
+    test/stl/initializer_list.cc
+    test/stl/iomanip.cc
+    test/stl/iomanip/quoted.cc
+    test/stl/ios.cc
+    test/stl/ios/save_flags.cc
+    test/stl/iosfwd.cc
+    test/stl/iterator.cc
+    test/stl/iterator/cbegin.cc
+    test/stl/iterator/cend.cc
+    test/stl/iterator/make_reverse_iterator.cc
+    test/stl/iterator/rbegin.cc
+    test/stl/iterator/rend.cc
+    test/stl/memory/checked_delete.cc
+    test/stl/ratio.cc
+    test/stl/thread/checked_thread.cc
+    test/stl/typeinfo.cc
+    test/stl/typeinfo/type_info_wrapper.cc
+    test/stl/type_traits.cc
+    test/stl/type_traits/any_overload.cc
+    test/stl/type_traits/endian.cc
+    test/stl/type_traits/has_reallocate.cc
+    test/stl/type_traits/identity.cc
+    test/stl/type_traits/is_aggregate.cc
+    test/stl/type_traits/is_complete.cc
+    test/stl/type_traits/is_duration.cc
+    test/stl/type_traits/is_final.cc
+    test/stl/type_traits/is_invocable.cc
+    test/stl/type_traits/is_iterator.cc
+    test/stl/type_traits/is_reference_wrapper.cc
+    test/stl/type_traits/is_relocatable.cc
+    test/stl/type_traits/is_safe_overload.cc
+    test/stl/type_traits/is_swappable.cc
+    test/stl/type_traits/is_trivial.cc
+    test/stl/type_traits/logical.cc
+    test/stl/type_traits/nat.cc
+    test/stl/type_traits/remove_cvref.cc
+    test/stl/type_traits/void_t.cc
 
 # TODO: restore
 #    test/algorithm/interpolation_search.cc
