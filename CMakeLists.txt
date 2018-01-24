@@ -172,6 +172,7 @@ CHECK_FUNCTION_EXISTS(mlock HAVE_MLOCK)
 CHECK_FUNCTION_EXISTS(mmap HAVE_MMAP)
 CHECK_FUNCTION_EXISTS(mmap HAVE_MPROTECT)
 CHECK_FUNCTION_EXISTS(_wfopen HAVE_WFOPEN)
+CHECK_FUNCTION_EXISTS(aligned_alloc HAVE_ALIGNED_ALLOC)
 
 # CONFIGURATION
 # -------------
@@ -550,6 +551,7 @@ set(HEADER_FILES
 #    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/container/compressed_pair.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/array.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/atomic.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/bitset.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/chrono.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/chrono/abs.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/chrono/ceil.h"
@@ -557,6 +559,11 @@ set(HEADER_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/chrono/round.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/complex.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/container/forward_list.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/csetjmp.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/csignal.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cstdarg.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cstdlib.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cstdlib/aligned_alloc.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/execution.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/forward_list.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/future.h"
@@ -575,6 +582,7 @@ set(HEADER_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/checked_delete.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/ratio.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/thread/checked_thread.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/typeindex.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/typeinfo.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/typeinfo/type_info_wrapper.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits.h"
@@ -811,6 +819,7 @@ set(SOURCE_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/system/sys/mman.cc"
 
     # STL
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cstdlib/aligned_alloc.cc"
 
 # TODO: restore
 #    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/allocator/crt.cc"
@@ -1217,12 +1226,18 @@ set(TEST_FILES
     # Only add once you have unittests
     test/stl/array.cc
     test/stl/atomic.cc
+    test/stl/bitset.cc
     test/stl/chrono.cc
     test/stl/chrono/abs.cc
     test/stl/chrono/ceil.cc
     test/stl/chrono/floor.cc
     test/stl/chrono/round.cc
     test/stl/complex.cc
+    test/stl/csetjmp.cc
+    test/stl/csignal.cc
+    test/stl/cstdarg.cc
+    test/stl/cstdlib.cc
+    test/stl/cstdlib/aligned_alloc.cc
     test/stl/execution.cc
     test/stl/forward_list.cc
     test/stl/future.cc
@@ -1241,6 +1256,7 @@ set(TEST_FILES
     test/stl/memory/checked_delete.cc
     test/stl/ratio.cc
     test/stl/thread/checked_thread.cc
+    test/stl/typeindex.cc
     test/stl/typeinfo.cc
     test/stl/typeinfo/type_info_wrapper.cc
     test/stl/type_traits.cc
