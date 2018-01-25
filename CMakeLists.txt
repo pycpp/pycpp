@@ -552,20 +552,45 @@ set(HEADER_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/array.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/atomic.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/bitset.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cassert.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cfloat.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/chrono.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/chrono/abs.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/chrono/ceil.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/chrono/floor.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/chrono/round.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cinttypes.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/climits.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/complex.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/container/forward_list.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/csetjmp.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/csignal.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cstdarg.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cstddef.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cstdint.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cstdlib.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cstdlib/aligned_alloc.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/exception.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/exception/uncaught_exception.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/execution.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/forward_list.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/bit_not.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/boyer_moore_horspool_searcher.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/boyer_moore_searcher.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/default_searcher.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/equal_to.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/greater.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/greater_equal.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/hash.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/hash_specialize.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/invoke.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/less.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/less_equal.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/not_equal_to.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/not_fn.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/search.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/xxhash_c.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/future.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/initializer_list.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/iomanip.h"
@@ -579,8 +604,14 @@ set(HEADER_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/iterator/make_reverse_iterator.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/iterator/rbegin.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/iterator/rend.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/limits.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/checked_delete.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/new.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/new/hardware_interference.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/new/launder.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/ratio.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/scoped_allocator.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/stdexcept.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/thread/checked_thread.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/typeindex.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/typeinfo.h"
@@ -605,6 +636,15 @@ set(HEADER_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/nat.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/remove_cvref.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/void_t.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/tuple.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/tuple/apply.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/tuple/make_from_tuple.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/utility.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/utility/as_const.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/utility/chars.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/utility/exchange.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/utility/in_place.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/utility/integer_sequence.h"
 
 # TODO: restore
 #    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/algorithm.h"
@@ -820,6 +860,9 @@ set(SOURCE_FILES
 
     # STL
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cstdlib/aligned_alloc.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/exception/uncaught_exception.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/xxhash_c.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/typeinfo/type_info_wrapper.cc"
 
 # TODO: restore
 #    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/allocator/crt.cc"
@@ -1206,8 +1249,10 @@ set(TEST_FILES
     test/main.cc
 
     # PREPROCESSOR
+    test/preprocessor/abi.cc
     test/preprocessor/architecture.cc
     test/preprocessor/byteorder.cc
+    test/preprocessor/cache.cc
     test/preprocessor/compiler.cc
     test/preprocessor/os.cc
     test/preprocessor/parallel.cc
@@ -1227,19 +1272,40 @@ set(TEST_FILES
     test/stl/array.cc
     test/stl/atomic.cc
     test/stl/bitset.cc
+    test/stl/cassert.cc
+    test/stl/cfloat.cc
     test/stl/chrono.cc
     test/stl/chrono/abs.cc
     test/stl/chrono/ceil.cc
     test/stl/chrono/floor.cc
     test/stl/chrono/round.cc
+    test/stl/cinttypes.cc
+    test/stl/climits.cc
     test/stl/complex.cc
     test/stl/csetjmp.cc
     test/stl/csignal.cc
     test/stl/cstdarg.cc
+    test/stl/cstddef.cc
+    test/stl/cstdint.cc
     test/stl/cstdlib.cc
     test/stl/cstdlib/aligned_alloc.cc
+    test/stl/exception.cc
     test/stl/execution.cc
     test/stl/forward_list.cc
+    test/stl/functional.cc
+    test/stl/functional/bit_not.cc
+    test/stl/functional/boyer_moore_horspool_searcher.cc
+    test/stl/functional/boyer_moore_searcher.cc
+    test/stl/functional/default_searcher.cc
+    test/stl/functional/equal_to.cc
+    test/stl/functional/greater.cc
+    test/stl/functional/greater_equal.cc
+    test/stl/functional/hash.cc
+    test/stl/functional/invoke.cc
+    test/stl/functional/less.cc
+    test/stl/functional/less_equal.cc
+    test/stl/functional/not_equal_to.cc
+    test/stl/functional/not_fn.cc
     test/stl/future.cc
     test/stl/initializer_list.cc
     test/stl/iomanip.cc
@@ -1253,8 +1319,14 @@ set(TEST_FILES
     test/stl/iterator/make_reverse_iterator.cc
     test/stl/iterator/rbegin.cc
     test/stl/iterator/rend.cc
+    test/stl/limits.cc
     test/stl/memory/checked_delete.cc
+    test/stl/new.cc
+    test/stl/new/hardware_interference.cc
+    test/stl/new/launder.cc
     test/stl/ratio.cc
+    test/stl/scoped_allocator.cc
+    test/stl/stdexcept.cc
     test/stl/thread/checked_thread.cc
     test/stl/typeindex.cc
     test/stl/typeinfo.cc
@@ -1279,6 +1351,15 @@ set(TEST_FILES
     test/stl/type_traits/nat.cc
     test/stl/type_traits/remove_cvref.cc
     test/stl/type_traits/void_t.cc
+    test/stl/tuple.cc
+    test/stl/tuple/apply.cc
+    test/stl/tuple/make_from_tuple.cc
+    test/stl/utility.cc
+    test/stl/utility/as_const.cc
+    test/stl/utility/chars.cc
+    test/stl/utility/exchange.cc
+    test/stl/utility/in_place.cc
+    test/stl/utility/integer_sequence.cc
 
 # TODO: restore
 #    test/algorithm/interpolation_search.cc
