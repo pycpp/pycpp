@@ -568,8 +568,10 @@ set(HEADER_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cmath.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/complex.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/condition_variable.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/container/deque.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/container/forward_list.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/container/list.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/container/split_buffer.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/container/vector.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/csetjmp.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/csignal.h"
@@ -584,6 +586,7 @@ set(HEADER_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cuchar.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cwchar.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cwctype.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/deque.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/exception.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/exception/uncaught_exception.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/execution.h"
@@ -639,17 +642,19 @@ set(HEADER_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/checked_delete.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/destroy.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/has_construct.h"
-    #"${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/make_shared.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/make_shared.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/make_unique.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/pointer_cast.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/pointer_traits.h"
     #"${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/polymorphic_allocator.h"
-    #"${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/shared_ptr.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/relocate.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/shared_ptr.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/swap_allocator.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/to_address.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/to_raw_pointer.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/uninitialized.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/uses_allocator.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/weak_ptr.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/mutex.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/new.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/new/hardware_interference.h"
@@ -677,6 +682,7 @@ set(HEADER_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/typeinfo/type_info_wrapper.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/any_overload.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/disable_if.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/endian.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/has_member_function.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/has_member_type.h"
@@ -684,6 +690,7 @@ set(HEADER_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/has_reallocate.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/identity.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/is_aggregate.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/is_array.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/is_complete.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/is_duration.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/is_final.h"
@@ -1367,6 +1374,7 @@ set(TEST_FILES
     test/stl/cuchar.cc
     test/stl/cwchar.cc
     test/stl/cwctype.cc
+    test/stl/deque.cc
     test/stl/exception.cc
     test/stl/execution.cc
     test/stl/forward_list.cc
@@ -1416,21 +1424,20 @@ set(TEST_FILES
     test/stl/memory/allocator_destructor.cc
     test/stl/memory/allocator_traits.cc
     test/stl/memory/checked_delete.cc
+    test/stl/memory/destroy.cc
+    test/stl/memory/has_construct.cc
     # TODO: define unittests
-#    test/stl/memory/destroy.cc
-#    test/stl/memory/has_construct.cc
-#    #test/stl/memory/make_shared.cc
-#    test/stl/memory/make_unique.cc
-#    test/stl/memory/pointer_cast.cc
-#    test/stl/memory/pointer_traits.cc
+    test/stl/memory/make_unique.cc
+    test/stl/memory/pointer_cast.cc
+    test/stl/memory/pointer_traits.cc
 #    #test/stl/memory/polymorphic_allocator.cc
-#    #test/stl/memory/shared_ptr.cc
-#    test/stl/memory/swap_allocator.cc
-#    test/stl/memory/to_address.cc
-#    test/stl/memory/to_raw_pointer.cc
-#    test/stl/memory/uninitialized.cc
-#    test/stl/memory/uses_allocator.cc
-
+    test/stl/memory/relocate.cc
+    test/stl/memory/shared_ptr.cc
+    test/stl/memory/swap_allocator.cc
+    test/stl/memory/to_address.cc
+    test/stl/memory/to_raw_pointer.cc
+    test/stl/memory/uninitialized.cc
+    test/stl/memory/uses_allocator.cc
     test/stl/mutex.cc
     test/stl/new.cc
     test/stl/new/hardware_interference.cc
@@ -1458,6 +1465,7 @@ set(TEST_FILES
     test/stl/typeinfo/type_info_wrapper.cc
     test/stl/type_traits.cc
     test/stl/type_traits/any_overload.cc
+    test/stl/type_traits/disable_if.cc
     test/stl/type_traits/endian.cc
     test/stl/type_traits/has_member_function.cc
     test/stl/type_traits/has_member_type.cc
@@ -1465,6 +1473,7 @@ set(TEST_FILES
     test/stl/type_traits/has_reallocate.cc
     test/stl/type_traits/identity.cc
     test/stl/type_traits/is_aggregate.cc
+    test/stl/type_traits/is_array.cc
     test/stl/type_traits/is_complete.cc
     test/stl/type_traits/is_duration.cc
     test/stl/type_traits/is_final.cc

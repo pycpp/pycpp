@@ -23,11 +23,15 @@
             - Synopsis
             - Implementation
             - Unittests
+        - Deque
+            - Synopsis
+            - Implementation
+            - Unittests
+
         - Map
         - MultiMap
         - UnorderedMap
         - UnorderedMultiMap
-        - Deque
         - Set
         - MultiSet
         - UnorderedSet
