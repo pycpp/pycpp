@@ -5,6 +5,7 @@ set(CMAKE_LEGACY_CYGWIN_WIN32 1)
 cmake_minimum_required(VERSION 2.8)
 project(pycpp CXX)
 enable_testing()
+enable_language(C ASM)
 
 if(MSVC AND BUILD_SHARED_LIBS)
     cmake_minimum_required(VERSION 3.4)
@@ -131,6 +132,8 @@ elseif(MSVC)
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /MT /Fd${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pdb")
 endif()
 
+set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} -x assembler-with-cpp")
+
 if(BUILD_SHARED_LIBS)
     set(BUILD_STATIC_LIBS OFF)
 else()
@@ -151,8 +154,6 @@ endif()
 # --------
 
 include(CheckIncludeFile)
-enable_language(C)
-
 CHECK_INCLUDE_FILE(sys/mman.h HAVE_SYS_MMAN_H)
 
 # FUNCTIONS
@@ -181,20 +182,6 @@ configure_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/config.h.in"
   "${CMAKE_CURRENT_BINARY_DIR}/include/pycpp/config.h"
 )
-
-set(CORE_MODULES
-    "preprocessor"
-    "system"
-    "sfinae"
-    "stl"
-)
-
-foreach(module ${CORE_MODULES})
-    configure_file(
-      "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/${module}/module.h.in"
-      "${CMAKE_CURRENT_BINARY_DIR}/include/pycpp/${module}.h"
-    )
-endforeach()
 
 # EXTERNAL
 # --------
@@ -430,33 +417,6 @@ list(APPEND PYCPP_INCLUDE_DIRS
 #    list(APPEND PYCPP_INCLUDE_DIRS ${RAPIDJSON_INCLUDE_DIRS})
 #endif()
 #
-#if(BUILD_MATH)
-## TODO: temporarily disabled libdynd, restore
-##    add_external_project(dynd_external third_party/libdynd
-##        "-DDYND_SHARED_LIB=OFF"
-##        "-DDYND_LLVM=OFF"
-##        "-DDYND_INSTALL_LIB=OFF"
-##        "-DDYND_BUILD_TESTS=OFF"
-##        "-DDYND_BUILD_BENCHMARKS=OFF"
-##        "-DDYND_BUILD_PLUGINS=OFF"
-##        "-DDYND_BUILD_DOCS=OFF"
-##        "-DDYND_COVERAGE=OFF"
-##    )
-##    # Force lib prefix due to libdynd behavior
-##    set(OLD_CMAKE_STATIC_LIBRARY_PREFIX ${CMAKE_STATIC_LIBRARY_PREFIX})
-##    set(CMAKE_STATIC_LIBRARY_PREFIX "lib")
-##    add_external_target(dynd third_party/libdynd/include third_party/libdynd STATIC dynd_external "")
-##    add_external_target(dyndt third_party/libdynd/include third_party/libdynd STATIC dynd_external "")
-##    set(CMAKE_STATIC_LIBRARY_PREFIX ${OLD_CMAKE_STATIC_LIBRARY_PREFIX})
-##
-##    # Include and set files
-##    list(APPEND ${dynd_INCLUDE_DIR} "${CMAKE_CURRENT_BINARY_DIR}/third_party/libdynd/include")
-##    list(APPEND PYCPP_COMPILE_DEFINITIONS HAVE_DYND=1)
-##    list(APPEND PYCPP_DEPENDENCIES dynd dyndt)
-##    list(APPEND PYCPP_LIBRARIES dynd dyndt)
-##    list(APPEND PYCPP_INCLUDE_DIRS ${dynd_INCLUDE_DIR})
-#endif()
-#
 #if(BUILD_RE)
 #    if(USE_SYSTEM_RE2)
 #        find_package(RE2)
@@ -514,6 +474,101 @@ if (BUILD_BENCHMARKS)
     endif()
 endif()
 
+# SOURCES
+# -------
+
+set(PYCPP_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+set(PYCPP_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+
+#
+#   Append files to a list, prefixing a path.
+#
+#   Takes optional N arguments after the local path
+#   to specify headers to add.
+#
+#   \param path         Directory of file list.
+#   \param target       Output variable name.
+#
+macro(prefix_path path target)
+    # Store the extra args
+    set(filelist ${ARGN})
+
+    # Prefix the paths
+    foreach(filename ${filelist})
+        list(APPEND ${target} "${path}/${filename}")
+    endforeach(filename)
+
+    # Add them to the parent scope.
+    set(${target} "${${target}}" PARENT_SCOPE)
+
+endmacro(prefix_path)
+
+#
+#   Add headers from local path.
+#
+#   Takes optional N arguments after the local path
+#   to specify headers to add.
+#
+#   \param local_path   Path of directory relative to "${PYCPP_SOURCE_DIR}".
+#
+macro(add_headers)
+    set(headers ${ARGN})
+    prefix_path("${PYCPP_SOURCE_DIR}/pycpp/${module}" PYCPP_HEADER_FILES ${headers})
+endmacro(add_headers)
+
+#
+#   Add sources from local path.
+#
+#   Takes optional N arguments after the local path
+#   to specify sources to add.
+#
+macro(add_sources)
+    set(sources ${ARGN})
+    prefix_path("${PYCPP_SOURCE_DIR}/pycpp/${module}" PYCPP_SOURCE_FILES ${sources})
+endmacro(add_sources)
+
+#
+#   Add tests from local path.
+#
+#   Takes optional N arguments after the local path
+#   to specify tests to add.
+#
+macro(add_tests)
+    set(tests ${ARGN})
+    prefix_path("${PYCPP_SOURCE_DIR}/test/${module}" PYCPP_TEST_FILES ${tests})
+endmacro(add_tests)
+
+set(PYCPP_HEADER_FILES "${PYCPP_BINARY_DIR}/include/pycpp/config.h")
+set(PYCPP_TEST_FILES "${PYCPP_SOURCE_DIR}/test/main.cc")
+
+set(PYCPP_MODULES
+    "preprocessor"
+    "system"
+    "stl"
+    "sfinae"
+    "adaptor"
+    "intrusive"
+    "allocator"
+    "context"
+    "utility"
+    "lexical"
+)
+
+# TODO: append to modules based on optional modules...
+
+foreach(module ${PYCPP_MODULES})
+    # Configure and include the module header.
+    configure_file(
+      "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/${module}/module.h.in"
+      "${PYCPP_BINARY_DIR}/include/pycpp/${module}.h"
+    )
+    list(APPEND PYCPP_HEADER_FILES "${PYCPP_BINARY_DIR}/include/pycpp/${module}.h")
+
+    # Get rest of source and test files.
+    add_subdirectory(pycpp/${module})
+    add_subdirectory(test/${module})
+endforeach()
+
 # LIBRARY
 # -------
 
@@ -522,714 +577,14 @@ if(MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -WX")
 endif()
 
-set(HEADER_FILES
-    # CONFIG
-    "${CMAKE_CURRENT_BINARY_DIR}/include/pycpp/config.h"
-
-    # PREPROCESSOR
-    "${CMAKE_CURRENT_BINARY_DIR}/include/pycpp/preprocessor.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/preprocessor/architecture.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/preprocessor/byteorder.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/preprocessor/compiler.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/preprocessor/compiler_traits.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/preprocessor/os.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/preprocessor/parallel.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/preprocessor/processor.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/preprocessor/stdint.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/preprocessor/tls.h"
-
-    # SYSTEM
-    "${CMAKE_CURRENT_BINARY_DIR}/include/pycpp/system.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/system/errno.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/system/windows.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/system/sys/stat.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/system/sys/mman.h"
-
-    # STL
-    # TODO: add a lot more....
-    # Only add once you have unittests
-    "${CMAKE_CURRENT_BINARY_DIR}/include/pycpp/stl.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/container/compressed_pair.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/array.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/atomic.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/bitset.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cassert.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cctype.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cerrno.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cfenv.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cfloat.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/chrono.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/chrono/abs.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/chrono/ceil.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/chrono/floor.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/chrono/round.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cinttypes.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/climits.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/clocale.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cmath.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/complex.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/condition_variable.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/container/deque.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/container/forward_list.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/container/list.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/container/split_buffer.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/container/vector.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/csetjmp.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/csignal.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cstdarg.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cstddef.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cstdint.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cstdio.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cstdlib.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cstdlib/aligned_alloc.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cstring.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/ctime.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cuchar.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cwchar.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cwctype.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/deque.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/exception.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/exception/uncaught_exception.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/execution.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/forward_list.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/bit_and.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/bit_not.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/bit_or.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/bit_xor.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/boyer_moore_horspool_searcher.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/boyer_moore_searcher.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/default_searcher.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/divides.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/equal_to.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/greater.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/greater_equal.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/hash.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/hash_specialize.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/invoke.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/less.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/less_equal.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/logical_and.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/logical_not.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/logical_or.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/minus.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/modulus.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/multiplies.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/negate.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/not_equal_to.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/not_fn.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/plus.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/search.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/xxhash_c.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/future.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/initializer_list.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/iomanip.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/iomanip/quoted.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/ios.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/ios/save_flags.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/iosfwd.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/iterator.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/iterator/cbegin.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/iterator/cend.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/iterator/make_reverse_iterator.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/iterator/rbegin.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/iterator/rend.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/limits.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/list.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/allocator.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/allocator_destructor.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/allocator_traits.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/checked_delete.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/destroy.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/has_construct.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/make_shared.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/make_unique.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/pointer_cast.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/pointer_traits.h"
-    #"${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/polymorphic_allocator.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/relocate.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/shared_ptr.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/swap_allocator.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/to_address.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/to_raw_pointer.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/uninitialized.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/uses_allocator.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/weak_ptr.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/mutex.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/new.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/new/hardware_interference.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/new/launder.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/numeric.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/numeric/abs.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/numeric/exclusive_scan.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/numeric/gcd.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/numeric/inclusive_scan.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/numeric/lcm.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/numeric/reduce.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/numeric/transform_exclusive_scan.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/numeric/transform_inclusive_scan.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/numeric/transform_reduce.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/random.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/ratio.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/regex.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/scoped_allocator.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/stdexcept.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/system_error.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/thread.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/thread/checked_thread.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/typeindex.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/typeinfo.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/typeinfo/type_info_wrapper.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/any_overload.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/disable_if.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/endian.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/has_member_function.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/has_member_type.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/has_member_variable.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/has_reallocate.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/identity.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/is_aggregate.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/is_array.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/is_complete.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/is_duration.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/is_final.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/is_invocable.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/is_iterator.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/is_reference_wrapper.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/is_relocatable.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/is_safe_overload.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/is_swappable.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/is_trivial.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/logical.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/nat.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/remove_cvref.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/type_traits/void_t.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/tuple.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/tuple/apply.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/tuple/make_from_tuple.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/utility.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/utility/as_const.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/utility/chars.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/utility/exchange.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/utility/fast_swap.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/utility/in_place.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/utility/integer_sequence.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/valarray.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/vector.h"
-
-    # SFINAE
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/back.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/emplace_back.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/emplace_front.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/front.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_bit_and.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_bit_and_assign.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_bit_or.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_bit_or_assign.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_bit_xor.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_bit_xor_assign.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_divides.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_divides_assign.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_equal_to.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_greater.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_greater_equal.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_left_shift.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_left_shift_assign.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_less.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_less_equal.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_logical_and.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_logical_or.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_member_function.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_member_type.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_member_variable.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_minus.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_minus_assign.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_modulus.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_modulus_assign.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_multiplies.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_multiplies_assign.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_not_equal_to.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_op.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_plus.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_plus_assign.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_right_shift.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_right_shift_assign.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/has_subscript.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/is_complex.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/is_pair.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/is_reference_wrapper.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/is_specialization.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/is_string.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/is_tuple.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/pop_back.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/pop_front.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/push_back.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/push_front.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/reserve.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/sfinae/shrink_to_fit.h"
-
-# TODO: restore
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/algorithm.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/algorithm/interpolation_search.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/allocator.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/allocator/crt.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/allocator/linear.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/allocator/null.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/allocator/pool.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/allocator/secure.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/allocator/stack.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/allocator/standard.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/fixed/deque.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/fixed/forward_list.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/fixed/list.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/fixed/map.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/fixed/set.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/fixed/unordered_map.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/fixed/unordered_set.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/fixed/vector.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/intrusive/core.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/intrusive/deque.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/intrusive/forward_list.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/intrusive/list.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/intrusive/vector.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/iterator/category.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/iterator/chunked.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/iterator/input_iterator_facade.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/iterator/range.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/iterator/transform.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/iterator/unique.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/iterator/windowed.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/itertools.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/itertools/product.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/itertools/sampling.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lexical/atof.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lexical/atoi.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lexical/bool.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lexical/char.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lexical/enum.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lexical/float.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lexical/ftoa.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lexical/int.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lexical/itoa.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lexical/null.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/misc/compressed_pair.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/misc/enum.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/misc/heap_pimpl.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/misc/ordering.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/misc/safe_stdlib.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/misc/stack_pimpl.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/misc/xrange.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/multi_index/composite_key.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/multi_index/config.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/multi_index/container.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/multi_index/global_fun.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/multi_index/hashed_index_fwd.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/multi_index/hashed_index.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/multi_index/identity.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/multi_index/indexed_by.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/multi_index/mem_fun.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/multi_index/member.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/multi_index/ordered_index_fwd.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/multi_index/ordered_index.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/multi_index/random_access_index_fwd.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/multi_index/random_access_index.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/multi_index/ranked_index_fwd.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/multi_index/ranked_index.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/multi_index/sequenced_index_fwd.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/multi_index/sequenced_index.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/multi_index/tag.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/random.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/runtime/os.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/secure.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/secure/allocator.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/secure/char_traits.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/secure/stdlib.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/secure/string.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/string/base16.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/string/base32.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/string/base64.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/string/casemap.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/string/codec.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/string/getline.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/string/hex.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/string/punycode.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/string/string.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/string/unicode.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/string/url.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/vector_view.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/detail/fstream.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/detail/polymorphic_allocator.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/windows/error.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/windows/mman.h"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/windows/winapi.h"
-)
-
-set(SOURCE_FILES
-    # PREPROCESSOR
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/preprocessor/byteorder.cc"
-
-    # SYSTEM
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/system/windows.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/system/sys/mman.cc"
-
-    # STL
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/cstdlib/aligned_alloc.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/exception/uncaught_exception.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/functional/xxhash_c.c"
-    #"${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/memory/polymorphic_allocator.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/typeinfo/type_info_wrapper.cc"
-
-# TODO: restore
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/allocator/crt.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/allocator/pool.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/allocator/secure.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/allocator/standard.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lexical/atof.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lexical/atoi.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lexical/bool.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lexical/char.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lexical/float.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lexical/format.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lexical/ftoa.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lexical/int.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lexical/itoa.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lexical/null.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/misc/safe_stdlib.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/random/pseudorandom.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/random/sysrandom.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/runtime/os.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/secure/stdlib.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/any.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/detail/fstream.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/detail/polymorphic_allocator.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stl/detail/xxhash_c.c"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/string/base16.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/string/base32.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/string/base64.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/string/casemap.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/string/codec.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/string/getline.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/string/hex.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/string/punycode.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/string/string.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/string/unicode.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/string/url.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/windows/error.cc"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/windows/mman.cc"
-)
-
-# TODO: restore
-#if (BUILD_BLOOM)
-#        list(APPEND HEADER_FILES
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/bloom.h"
-#    )
-#endif()
-#
-#if(BUILD_CACHE)
-#    list(APPEND HEADER_FILES
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/cache.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/cache/lri.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/cache/lru.h"
-#    )
-#    if(BUILD_KEYVALUE)
-#        list(APPEND HEADER_FILES
-#            "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/cache/kv_backend.h"
-#            "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/cache/kv.h"
-#        )
-#        list(APPEND SOURCE_FILES
-#            "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/cache/kv_backend.cc"
-#        )
-#    endif()
-#endif()
-#
-#if(BUILD_CIPHER)
-#    list(APPEND HEADER_FILES
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/cipher.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/cipher/aes.h"
-#    )
-#    list(APPEND SOURCE_FILES
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/cipher/aes.cc"
-#    )
-#endif()
-#
-#if(BUILD_COLLECTIONS)
-#    list(APPEND HEADER_FILES
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/collections.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/collections/btree.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/collections/btree_map.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/collections/btree_set.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/collections/counter.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/collections/default_map.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/collections/ordered.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/collections/ordered_map.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/collections/ordered_set.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/collections/robin.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/collections/robin_map.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/collections/robin_set.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/collections/rope.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/collections/sorted_sequence.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/collections/threshold_counter.h"
-#    )
-#endif()
-#
-#if(BUILD_COMPRESSION)
-#    list(APPEND HEADER_FILES
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/compression.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/compression/blosc.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/compression/bzip2.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/compression/core.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/compression/detect.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/compression/exception.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/compression/gzip.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/compression/lzma.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/compression/zlib.h"
-#    )
-#    list(APPEND SOURCE_FILES
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/compression/blosc.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/compression/bzip2.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/compression/detect.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/compression/exception.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/compression/gzip.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/compression/lzma.cc"
-#        # Do not include zlib.cc, as it is already included in gzip.cc
-#        #"${CMAKE_CURRENT_SOURCE_DIR}/pycpp/compression/zlib.cc"
-#    )
-#
-#    if(BUILD_STREAM)
-#        list(APPEND HEADER_FILES
-#            "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/compression/stream.h"
-#        )
-#        list(APPEND SOURCE_FILES
-#            "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/compression/stream.cc"
-#        )
-#    endif()
-#endif()
-#
-#if (BUILD_CSV)
-#    list(APPEND HEADER_FILES
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/csv.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/csv/dict.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/csv/punct.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/csv/reader.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/csv/writer.h"
-#    )
-#    list(APPEND SOURCE_FILES
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/csv/dict.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/csv/punct.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/csv/reader.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/csv/writer.cc"
-#    )
-#endif()
-#
-#if (BUILD_CUCKOO)
-#    list(APPEND HEADER_FILES
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/cuckoo.h"
-#    )
-#endif()
-#
-#if (BUILD_DATETIME)
-#    list(APPEND HEADER_FILES
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/datetime.h"
-#    )
-#endif()
-#
-#if (BUILD_FILESYSTEM)
-#    list(APPEND HEADER_FILES
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/filesystem.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/filesystem/access.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/filesystem/exception.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/filesystem/fd.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/filesystem/home.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/filesystem/iterator.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/filesystem/path.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/filesystem/stat.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/filesystem/tmp.h"
-#    )
-#    list(APPEND SOURCE_FILES
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/filesystem/exception.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/filesystem/filesystem.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/filesystem/home.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/filesystem/iterator.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/filesystem/mac.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/filesystem/nt.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/filesystem/path.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/filesystem/posix.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/filesystem/stat.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/filesystem/tmp.cc"
-#    )
-#endif()
-#
-#if (BUILD_HASHLIB)
-#    list(APPEND HEADER_FILES
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/hashlib.h"
-#    )
-#    list(APPEND SOURCE_FILES
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/hashlib/hash.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/hashlib/md2.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/hashlib/md4.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/hashlib/md5.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/hashlib/sha1.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/hashlib/sha3.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/hashlib/sha256.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/hashlib/sha512.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/hashlib/whirlpool.cc"
-#    )
-#endif()
-#
-#if(BUILD_JSON)
-#    list(APPEND HEADER_FILES
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/json.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/json/core.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/json/dom.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/json/new.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/json/sax.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/json/writer.h"
-#    )
-#    list(APPEND SOURCE_FILES
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/json/core.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/json/dom.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/json/sax.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/json/writer.cc"
-#    )
-#endif()
-#
-#if(BUILD_LATTICE)
-#    list(APPEND HEADER_FILES
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/adaptor.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/adaptor/nossl.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/adaptor/openssl.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/async.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/auth.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/connection.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/cookie.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/crypto.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/digest.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/dns.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/header.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/method.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/multipart.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/parameter.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/proxy.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/redirect.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/request.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/response.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/ssl.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/timeout.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/transfer.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/url.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/util.h"
-#    )
-#    list(APPEND SOURCE_FILES
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/async.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/auth.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/cookie.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/digest.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/dns.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/header.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/multipart.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/parameter.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/proxy.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/redirect.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/request.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/response.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/ssl.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/timeout.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/url.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/util.cc"
-#    )
-#
-#    if(UNIX)
-        #list(APPEND HEADER_FILES "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/adaptor/posix.h")
-        #list(APPEND SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/adaptor/posix.cc")
-#    elseif(WIN32)
-        #list(APPEND HEADER_FILES "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/adaptor/windows.h")
-        #list(APPEND SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/lattice/adaptor/windows.cc")
-#    endif()
-#endif()
-#
-#if(BUILD_MATH)
-#    list(APPEND HEADER_FILES
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/math.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/math/array.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/math/average.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/math/binomial.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/math/distribution.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/math/dot.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/math/factorial.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/math/std.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/math/trapz.h"
-#    )
-#    list(APPEND SOURCE_FILES
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/math/distribution.cc"
-#    )
-#endif()
-#
-#if(BUILD_RE)
-#    list(APPEND HEADER_FILES
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/re.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/re/match.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/re/new.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/re/re.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/re/regex.h"
-#    )
-#    list(APPEND SOURCE_FILES
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/re/match.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/re/re.cc"
-#        # Don't include regex.cc, it's included by re.cc
-#    )
-#endif()
-#
-#if(BUILD_STREAM)
-#    list(APPEND HEADER_FILES
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stream.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stream/filter.h"
-#    )
-    #list(APPEND SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stream/filter.cc")
-#    if(BUILD_FILESYSTEM)
-#        list(APPEND HEADER_FILES
-#            "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stream/fd.h"
-#            "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stream/mmap.h"
-#            "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stream/random_access.h"
-#            "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stream/sequential.h"
-#        )
-#        list(APPEND SOURCE_FILES
-#            "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stream/fd.cc"
-#            "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stream/mmap.cc"
-#            "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stream/random_access.cc"
-#            "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/stream/sequential.cc"
-#        )
-#    endif()
-#endif()
-#
-#if(BUILD_XML)
-#    list(APPEND HEADER_FILES
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/xml.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/xml/core.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/xml/dom.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/xml/sax.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/xml/text.h"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/xml/writer.h"
-#    )
-#    list(APPEND SOURCE_FILES
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/xml/core.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/xml/dom.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/xml/sax.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/xml/text.cc"
-#        "${CMAKE_CURRENT_SOURCE_DIR}/pycpp/xml/writer.cc"
-#    )
-#endif()
-
 if(${CMAKE_VERSION} VERSION_LESS "3.1.0")
     # No `target_sources`, improvise
-    add_library(pycpp ${SOURCE_FILES})
+    add_library(pycpp ${PYCPP_SOURCE_FILES})
 else()
     add_library(pycpp "")
     target_sources(pycpp
-        PRIVATE ${SOURCE_FILES}
-        PUBLIC ${HEADER_FILES}
+        PRIVATE ${PYCPP_SOURCE_FILES}
+        PUBLIC ${PYCPP_HEADER_FILES}
     )
 endif()
 
@@ -1261,461 +616,10 @@ list(APPEND PYCPP_LIBRARIES pycpp)
 # TESTS
 # -----
 
-set(TEST_FILES
-    # MAIN
-    test/main.cc
-
-    # PREPROCESSOR
-    test/preprocessor/abi.cc
-    test/preprocessor/architecture.cc
-    test/preprocessor/byteorder.cc
-    test/preprocessor/cache.cc
-    test/preprocessor/compiler.cc
-    test/preprocessor/os.cc
-    test/preprocessor/parallel.cc
-    test/preprocessor/processor.cc
-    test/preprocessor/stdint.cc
-    test/preprocessor/tls.cc
-
-    # SYSTEM
-    test/system/errno.cc
-    test/system/windows.cc
-    test/system/sys/stat.cc
-    test/system/sys/mman.cc
-
-    # STL
-    # TODO: add a lot
-    # Only add once you have unittests
-    test/stl/array.cc
-    test/stl/atomic.cc
-    test/stl/bitset.cc
-    test/stl/cassert.cc
-    test/stl/cctype.cc
-    test/stl/cerrno.cc
-    test/stl/cfenv.cc
-    test/stl/cfloat.cc
-    test/stl/chrono.cc
-    test/stl/chrono/abs.cc
-    test/stl/chrono/ceil.cc
-    test/stl/chrono/floor.cc
-    test/stl/chrono/round.cc
-    test/stl/cinttypes.cc
-    test/stl/climits.cc
-    test/stl/clocale.cc
-    test/stl/cmath.cc
-    test/stl/complex.cc
-    test/stl/condition_variable.cc
-    test/stl/csetjmp.cc
-    test/stl/csignal.cc
-    test/stl/cstdarg.cc
-    test/stl/cstddef.cc
-    test/stl/cstdint.cc
-    test/stl/cstdio.cc
-    test/stl/cstdlib.cc
-    test/stl/cstdlib/aligned_alloc.cc
-    test/stl/cstring.cc
-    test/stl/ctime.cc
-    test/stl/cuchar.cc
-    test/stl/cwchar.cc
-    test/stl/cwctype.cc
-    test/stl/deque.cc
-    test/stl/exception.cc
-    test/stl/execution.cc
-    test/stl/forward_list.cc
-    test/stl/functional.cc
-    test/stl/functional/bit_and.cc
-    test/stl/functional/bit_not.cc
-    test/stl/functional/bit_or.cc
-    test/stl/functional/bit_xor.cc
-    test/stl/functional/boyer_moore_horspool_searcher.cc
-    test/stl/functional/boyer_moore_searcher.cc
-    test/stl/functional/default_searcher.cc
-    test/stl/functional/divides.cc
-    test/stl/functional/equal_to.cc
-    test/stl/functional/greater.cc
-    test/stl/functional/greater_equal.cc
-    test/stl/functional/hash.cc
-    test/stl/functional/invoke.cc
-    test/stl/functional/less.cc
-    test/stl/functional/less_equal.cc
-    test/stl/functional/logical_and.cc
-    test/stl/functional/logical_not.cc
-    test/stl/functional/logical_or.cc
-    test/stl/functional/minus.cc
-    test/stl/functional/modulus.cc
-    test/stl/functional/multiplies.cc
-    test/stl/functional/negate.cc
-    test/stl/functional/not_equal_to.cc
-    test/stl/functional/not_fn.cc
-    test/stl/functional/plus.cc
-    test/stl/future.cc
-    test/stl/initializer_list.cc
-    test/stl/iomanip.cc
-    test/stl/iomanip/quoted.cc
-    test/stl/ios.cc
-    test/stl/ios/save_flags.cc
-    test/stl/iosfwd.cc
-    test/stl/iterator.cc
-    test/stl/iterator/cbegin.cc
-    test/stl/iterator/cend.cc
-    test/stl/iterator/make_reverse_iterator.cc
-    test/stl/iterator/rbegin.cc
-    test/stl/iterator/rend.cc
-    test/stl/limits.cc
-    test/stl/list.cc
-    test/stl/memory.cc
-    test/stl/memory/allocator.cc
-    test/stl/memory/allocator_destructor.cc
-    test/stl/memory/allocator_traits.cc
-    test/stl/memory/checked_delete.cc
-    test/stl/memory/destroy.cc
-    test/stl/memory/has_construct.cc
-    # TODO: define unittests
-    test/stl/memory/make_unique.cc
-    test/stl/memory/pointer_cast.cc
-    test/stl/memory/pointer_traits.cc
-#    #test/stl/memory/polymorphic_allocator.cc
-    test/stl/memory/relocate.cc
-    test/stl/memory/shared_ptr.cc
-    test/stl/memory/swap_allocator.cc
-    test/stl/memory/to_address.cc
-    test/stl/memory/to_raw_pointer.cc
-    test/stl/memory/uninitialized.cc
-    test/stl/memory/uses_allocator.cc
-    test/stl/mutex.cc
-    test/stl/new.cc
-    test/stl/new/hardware_interference.cc
-    test/stl/new/launder.cc
-    test/stl/numeric.cc
-    test/stl/numeric/abs.cc
-    test/stl/numeric/exclusive_scan.cc
-    test/stl/numeric/gcd.cc
-    test/stl/numeric/inclusive_scan.cc
-    test/stl/numeric/lcm.cc
-    test/stl/numeric/reduce.cc
-    test/stl/numeric/transform_exclusive_scan.cc
-    test/stl/numeric/transform_inclusive_scan.cc
-    test/stl/numeric/transform_reduce.cc
-    test/stl/random.cc
-    test/stl/ratio.cc
-    test/stl/regex.cc
-    test/stl/scoped_allocator.cc
-    test/stl/stdexcept.cc
-    test/stl/system_error.cc
-    test/stl/thread.cc
-    test/stl/thread/checked_thread.cc
-    test/stl/typeindex.cc
-    test/stl/typeinfo.cc
-    test/stl/typeinfo/type_info_wrapper.cc
-    test/stl/type_traits.cc
-    test/stl/type_traits/any_overload.cc
-    test/stl/type_traits/disable_if.cc
-    test/stl/type_traits/endian.cc
-    test/stl/type_traits/has_member_function.cc
-    test/stl/type_traits/has_member_type.cc
-    test/stl/type_traits/has_member_variable.cc
-    test/stl/type_traits/has_reallocate.cc
-    test/stl/type_traits/identity.cc
-    test/stl/type_traits/is_aggregate.cc
-    test/stl/type_traits/is_array.cc
-    test/stl/type_traits/is_complete.cc
-    test/stl/type_traits/is_duration.cc
-    test/stl/type_traits/is_final.cc
-    test/stl/type_traits/is_invocable.cc
-    test/stl/type_traits/is_iterator.cc
-    test/stl/type_traits/is_reference_wrapper.cc
-    test/stl/type_traits/is_relocatable.cc
-    test/stl/type_traits/is_safe_overload.cc
-    test/stl/type_traits/is_swappable.cc
-    test/stl/type_traits/is_trivial.cc
-    test/stl/type_traits/logical.cc
-    test/stl/type_traits/nat.cc
-    test/stl/type_traits/remove_cvref.cc
-    test/stl/type_traits/void_t.cc
-    test/stl/tuple.cc
-    test/stl/tuple/apply.cc
-    test/stl/tuple/make_from_tuple.cc
-    test/stl/utility.cc
-    test/stl/utility/as_const.cc
-    test/stl/utility/chars.cc
-    test/stl/utility/exchange.cc
-    test/stl/utility/in_place.cc
-    test/stl/utility/integer_sequence.cc
-    test/stl/valarray.cc
-    test/stl/vector.cc
-
-# TODO: restore
-#    test/algorithm/interpolation_search.cc
-#    test/allocator/crt.cc
-#    test/allocator/linear.cc
-#    test/allocator/null.cc
-#    test/allocator/pool.cc
-#    test/allocator/secure.cc
-#    test/allocator/stack.cc
-#    test/allocator/standard.cc
-#    test/cache/lri.cc
-#    test/cache/lru.cc
-#    test/fixed/deque.cc
-#    test/fixed/forward_list.cc
-#    test/fixed/list.cc
-#    test/fixed/map.cc
-#    test/fixed/set.cc
-#    test/fixed/unordered_map.cc
-#    test/fixed/unordered_set.cc
-#    test/fixed/vector.cc
-#    test/intrusive/deque.cc
-#    test/intrusive/forward_list.cc
-#    test/intrusive/list.cc
-#    test/intrusive/vector.cc
-#    test/lexical.cc
-#    test/lexical/atof.cc
-#    test/lexical/atoi.cc
-#    test/lexical/bool.cc
-#    test/lexical/char.cc
-#    test/lexical/enum.cc
-#    test/lexical/float.cc
-#    test/lexical/ftoa.cc
-#    test/lexical/int.cc
-#    test/lexical/itoa.cc
-#    test/lexical/null.cc
-#    test/misc/compressed_pair.cc
-#    test/misc/enum.cc
-#    test/misc/heap_pimpl.cc
-#    test/misc/ordering.cc
-#    test/misc/safe_stdlib.cc
-#    test/misc/stack_pimpl.cc
-#    test/misc/xrange.cc
-#    test/runtime/os.cc
-#    test/secure/allocator.cc
-#    test/secure/string.cc
-#    test/secure/stdlib.cc
-#    test/sfinae/back.cc
-#    test/sfinae/emplace_back.cc
-#    test/sfinae/emplace_front.cc
-#    test/sfinae/front.cc
-#    test/sfinae/has_bit_and.cc
-#    test/sfinae/has_bit_and_assign.cc
-#    test/sfinae/has_bit_or.cc
-#    test/sfinae/has_bit_or_assign.cc
-#    test/sfinae/has_bit_xor.cc
-#    test/sfinae/has_bit_xor_assign.cc
-#    test/sfinae/has_divides.cc
-#    test/sfinae/has_divides_assign.cc
-#    test/sfinae/has_equal_to.cc
-#    test/sfinae/has_greater.cc
-#    test/sfinae/has_greater_equal.cc
-#    test/sfinae/has_left_shift.cc
-#    test/sfinae/has_left_shift_assign.cc
-#    test/sfinae/has_less.cc
-#    test/sfinae/has_less_equal.cc
-#    test/sfinae/has_logical_and.cc
-#    test/sfinae/has_logical_or.cc
-#    test/sfinae/has_member_function.cc
-#    test/sfinae/has_member_type.cc
-#    test/sfinae/has_member_variable.cc
-#    test/sfinae/has_minus.cc
-#    test/sfinae/has_minus_assign.cc
-#    test/sfinae/has_modulus.cc
-#    test/sfinae/has_modulus_assign.cc
-#    test/sfinae/has_multiplies.cc
-#    test/sfinae/has_multiplies_assign.cc
-#    test/sfinae/has_not_equal_to.cc
-#    test/sfinae/has_plus.cc
-#    test/sfinae/has_plus_assign.cc
-#    test/sfinae/has_right_shift.cc
-#    test/sfinae/has_right_shift_assign.cc
-#    test/sfinae/has_subscript.cc
-#    test/sfinae/is_complex.cc
-#    test/sfinae/is_specialization.cc
-#    test/sfinae/is_pair.cc
-#    test/sfinae/is_reference_wrapper.cc
-#    test/sfinae/is_string.cc
-#    test/sfinae/is_tuple.cc
-#    test/sfinae/pop_back.cc
-#    test/sfinae/pop_front.cc
-#    test/sfinae/push_back.cc
-#    test/sfinae/push_front.cc
-#    test/sfinae/reserve.cc
-#    test/sfinae/shrink_to_fit.cc
-#    test/stl/any.cc
-#    test/stl/array.cc
-#    test/stl/bitset.cc
-#    test/stl/deque.cc
-#    test/stl/forward_list.cc
-#    test/stl/functional.cc
-#    test/stl/list.cc
-#    test/stl/map.cc
-#    test/stl/memory.cc
-#    test/stl/optional.cc
-#    test/stl/set.cc
-#    test/stl/string.cc
-#    test/stl/string_view.cc
-#    test/stl/system_error.cc
-#    test/stl/thread.cc
-#    test/stl/typeindex.cc
-#    test/stl/unordered_map.cc
-#    test/stl/unordered_set.cc
-#    test/stl/variant.cc
-#    test/stl/vector.cc
-#    test/stl/vector_view.cc
-#    test/stl/detail/forward_list.cc
-#    test/stl/detail/fstream.cc
-#    test/stl/detail/is_relocatable.cc
-#    test/stl/detail/is_safe_overload.cc
-#    test/stl/detail/is_swappable.cc
-#    test/stl/detail/polymorphic_allocator.cc
-#    test/string/base16.cc
-#    test/string/base32.cc
-#    test/string/base64.cc
-#    test/string/casemap.cc
-#    test/string/codec.cc
-#    test/string/getline.cc
-#    test/string/hex.cc
-#    test/string/punycode.cc
-#    test/string/string.cc
-#    test/string/unicode.cc
-#    test/string/url.cc
-#    test/iterator.cc
-#    test/itertools.cc
-#    test/random.cc
-)
-
-# TODO: restore
-#if (BUILD_BLOOM)
-#endif()
-#
-#if (BUILD_CACHE)
-#    if(BUILD_KEYVALUE)
-#        list(APPEND TEST_FILES
-#            test/cache/kv.cc
-#        )
-#    endif()
-#endif()
-#
-#if (BUILD_CIPHER)
-#    list(APPEND TEST_FILES test/cipher.cc)
-#endif()
-#
-#if(BUILD_COLLECTIONS)
-#    list(APPEND TEST_FILES
-#        test/collections/btree_map.cc
-#        test/collections/btree_set.cc
-#        test/collections/counter.cc
-#        test/collections/default_map.cc
-#        test/collections/ordered_map.cc
-#        test/collections/ordered_set.cc
-#        test/collections/robin_map.cc
-#        test/collections/robin_set.cc
-#        test/collections/rope.cc
-#        test/collections/sorted_sequence.cc
-#        test/collections/threshold_counter.cc
-#    )
-#endif()
-#
-#if(BUILD_COMPRESSION)
-#    list(APPEND TEST_FILES
-#        test/compression/blosc.cc
-#        test/compression/bzip2.cc
-#        test/compression/detect.cc
-#        test/compression/gzip.cc
-#        test/compression/lzma.cc
-#        test/compression/zlib.cc
-#    )
-#    if (BUILD_STREAM)
-#        list(APPEND TEST_FILES test/compression/stream.cc)
-#    endif()
-#endif()
-#
-#if (BUILD_CSV)
-#    list(APPEND TEST_FILES test/csv.cc)
-#endif()
-#
-#if (BUILD_CUCKOO)
-#endif()
-#
-#if (BUILD_DATETIME)
-#endif()
-#
-#if (BUILD_FILESYSTEM)
-#    list(APPEND TEST_FILES
-#        test/filesystem.cc
-#    )
-#endif()
-#
-#if (BUILD_HASHLIB)
-#    list(APPEND TEST_FILES test/hashlib.cc)
-#endif()
-#
-#if (BUILD_JSON)
-#    list(APPEND TEST_FILES
-#        test/json/dom.cc
-#        test/json/sax.cc
-#        test/json/writer.cc
-#    )
-#endif()
-#
-#if(BUILD_LATTICE)
-#    list(APPEND TEST_FILES
-#        test/lattice/auth.cc
-#        test/lattice/cookie.cc
-#        test/lattice/digest.cc
-#        test/lattice/parameter.cc
-#        test/lattice/timeout.cc
-#        test/lattice/url.cc
-#    )
-#endif()
-#
-#if(BUILD_MATH)
-#    list(APPEND TEST_FILES
-#        test/math/average.cc
-#        test/math/binomial.cc
-#        test/math/distribution.cc
-#        test/math/dot.cc
-#        test/math/factorial.cc
-#        test/math/std.cc
-#        test/math/trapz.cc
-#    )
-#endif()
-#
-#if(BUILD_RE)
-#    list(APPEND TEST_FILES
-#        test/re/match.cc
-#        test/re/re.cc
-#        test/re/regex.cc
-#    )
-#endif()
-#
-#if(BUILD_SQLITE)
-#    list(APPEND TEST_FILES
-#        test/cache/sqlite.cc
-#    )
-#endif()
-#
-#if (BUILD_STREAM)
-#    list(APPEND TEST_FILES test/stream/filter.cc)
-#    if(BUILD_FILESYSTEM)
-#        list(APPEND TEST_FILES
-#            test/stream/fd.cc
-#            test/stream/mmap.cc
-#            test/stream/random_access.cc
-#            test/stream/sequential.cc
-#        )
-#    endif()
-#endif()
-#
-#if (BUILD_XML)
-#    list(APPEND TEST_FILES
-#        test/xml/dom.cc
-#        test/xml/sax.cc
-#        test/xml/writer.cc
-#    )
-#endif()
-
-
 if(BUILD_TESTS)
     include_directories(${gtest_INCLUDE_DIR})
 
-    add_executable(pycpp_tests ${TEST_FILES})
+    add_executable(pycpp_tests ${PYCPP_TEST_FILES})
     target_link_libraries(pycpp_tests
         gtest
         gtest_main

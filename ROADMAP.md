@@ -5,6 +5,17 @@
     - Move to superproject
         - Restore missing modules in CMakeLists.txt
 
+    - Create a lightweight singleton pattern
+    - Create stack and heap pimpl (they're easy).
+        - Stack pimpl
+            - Unittests
+        - Heap pimpl
+    - Clone Boost Pool into allocator/pool
+    - Clone Boost intrusive (just intrusive_ptr, for now...)
+
+    - Implement Boost operators
+        - http://www.boost.org/doc/libs/1_66_0/libs/utility/operators.htm
+
     - Make iterators not depend on the allocator
         - LIBCXX interface.... Lols
         - Split Buffer

@@ -42,3 +42,51 @@
 	path = test/sfinae
 	url = https://github.com/pycpp/sfinae-test.git
 	branch = master
+[submodule "test/context"]
+	path = test/context
+	url = https://github.com/pycpp/context-test.git
+	branch = master
+[submodule "pycpp/context"]
+	path = pycpp/context
+	url = https://github.com/pycpp/context.git
+	branch = master
+[submodule "pycpp/adaptor"]
+	path = pycpp/adaptor
+	url = https://github.com/pycpp/adaptor.git
+	branch = master
+[submodule "test/adaptor"]
+	path = test/adaptor
+	url = https://github.com/pycpp/adaptor-test.git
+	branch = master
+[submodule "test/allocator"]
+	path = test/allocator
+	url = https://github.com/pycpp/allocator-test.git
+	branch = master
+[submodule "pycpp/allocator"]
+	path = pycpp/allocator
+	url = https://github.com/pycpp/allocator.git
+	branch = master
+[submodule "pycpp/intrusive"]
+	path = pycpp/intrusive
+	url = https://github.com/pycpp/intrusive.git
+	branch = master
+[submodule "test/intrusive"]
+	path = test/intrusive
+	url = https://github.com/pycpp/intrusive-test.git
+	branch = master
+[submodule "test/lexical"]
+	path = test/lexical
+	url = https://github.com/pycpp/lexical-test.git
+	branch = master
+[submodule "pycpp/lexical"]
+	path = pycpp/lexical
+	url = https://github.com/pycpp/lexical.git
+	branch = master
+[submodule "pycpp/utility"]
+	path = pycpp/utility
+	url = https://github.com/pycpp/utility.git
+	branch = master
+[submodule "test/utility"]
+	path = test/utility
+	url = https://github.com/pycpp/utility-test.git
+	branch = master
