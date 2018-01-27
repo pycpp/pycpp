@@ -34,3 +34,11 @@
 	path = pycpp/stl
 	url = https://github.com/pycpp/stl.git
 	branch = master
+[submodule "pycpp/sfinae"]
+	path = pycpp/sfinae
+	url = https://github.com/pycpp/sfinae.git
+	branch = master
+[submodule "test/sfinae"]
+	path = test/sfinae
+	url = https://github.com/pycpp/sfinae-test.git
+	branch = master
