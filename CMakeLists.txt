@@ -75,6 +75,7 @@ option(WITH_XML "Build (only) XML library" OFF)
 # OPTIONS
 option(BUILD_BENCHMARKS "Build pycpp library benchmarks" OFF)
 option(BUILD_TESTS "Build pycpp library tests" OFF)
+SET(BUILD_SHARED_LIBS OFF CACHE STRING "Prefer static linkage by default.")
 SET(CXX_STANDARD "11" CACHE STRING "Minimum C++ standard to support.")
 SET(PYCPP_NAMESPACE "pycpp" CACHE STRING "Name for PyCPP namespace (empty for no namespace).")
 
@@ -138,8 +139,10 @@ set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} -x assembler-with-cpp")
 # STATIC/SHARED
 if(BUILD_SHARED_LIBS)
     set(BUILD_STATIC_LIBS OFF)
+    set(BUILD_TYPE SHARED)
 else()
     set(BUILD_STATIC_LIBS ON)
+    set(BUILD_TYPE STATIC)
     if(MINGW OR MSYS OR CYGWIN)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static")
     elseif(UNIX)
@@ -246,13 +249,24 @@ macro(add_external_target name includedir libdir build_type external debug_suffi
     set(${name}_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/${libdir})
 
     # Create external library
-    add_library(${name} ${build_type} IMPORTED)
+    # On MinGW, we need to link to the static archive, that references
+    # the shared library.
+    if (MINGW AND ${build_type} MATCHES SHARED)
+        add_library(${name} STATIC IMPORTED)
+    else()
+        add_library(${name} ${build_type} IMPORTED)
+    endif()
 
     set(${name}_prefix "${${name}_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${CMAKE_${build_type}_LIBRARY_PREFIX}${name}")
     if(CMAKE_BUILD_TYPE MATCHES Debug)
         set(${name}_suffix "${debug_suffix}${CMAKE_${build_type}_LIBRARY_SUFFIX}")
     else()
         set(${name}_suffix "${CMAKE_${build_type}_LIBRARY_SUFFIX}")
+    endif()
+    if (MINGW AND ${build_type} MATCHES SHARED)
+        # On MinGW, we need to link to the archive, since it builds
+        # both shared DLLs and archives to link to those DLLs.
+        set(${name}_suffix "${${name}_suffix}.a")
     endif()
     set(${name}_LIBRARY "${${name}_prefix}${${name}_suffix}")
 
@@ -464,15 +478,15 @@ if (BUILD_TESTS)
 
     if(NOT TARGET gtest)
         add_external_project(googletest_external third_party/googletest)
-        add_external_target(gtest third_party/googletest/googletest/include third_party/googletest/googlemock/gtest STATIC googletest_external "")
-        add_external_target(gtest_main third_party/googletest/googletest/include third_party/googletest/googlemock/gtest STATIC googletest_external "")
+        add_external_target(gtest third_party/googletest/googletest/include third_party/googletest/googlemock/gtest ${BUILD_TYPE} googletest_external "")
+        add_external_target(gtest_main third_party/googletest/googletest/include third_party/googletest/googlemock/gtest ${BUILD_TYPE} googletest_external "")
     endif()
 endif()
 
 if (BUILD_BENCHMARKS)
     if (NOT TARGET benchmark)
         add_external_project(benchmark_external third_party/benchmark)
-        add_external_target(benchmark third_party/benchmark/include third_party/benchmark/src STATIC benchmark_external "")
+        add_external_target(benchmark third_party/benchmark/include third_party/benchmark/src ${BUILD_TYPE} benchmark_external "")
         include_directories(${benchmark_INCLUDE_DIR})
     endif()
 endif()
