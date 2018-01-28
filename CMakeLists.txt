@@ -106,9 +106,9 @@ endif()
 set(BUILD_CACHE ${BUILD_KEYVALUE})
 set(BUILD_SQL BUILD_MYSQL OR BUILD_POSTGRES OR BUILD_SQLITE)
 
+# C++ standards.
 if (MSVC)
     if (CXX_STANDARD LESS "14")
-        # libdynd needs C++14 support
         set(CXX_STANDARD 14)
     endif()
 endif()
@@ -119,6 +119,7 @@ if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
 elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -std=c++${CXX_STANDARD}")
     if(USE_LIBCXX)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++ -lc++abi")
     endif()
 elseif(MSVC)
@@ -134,6 +135,7 @@ endif()
 
 set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} -x assembler-with-cpp")
 
+# STATIC/SHARED
 if(BUILD_SHARED_LIBS)
     set(BUILD_STATIC_LIBS OFF)
 else()
@@ -146,6 +148,7 @@ else()
     endif()
 endif()
 
+# Force -DUNICODE and -D_UNICODE for WIN32, use wide paths.
 if(WIN32)
     list(APPEND PYCPP_COMPILE_DEFINITIONS UNICODE _UNICODE)
 endif()
