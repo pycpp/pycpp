@@ -6,6 +6,10 @@
         - Restore missing modules in CMakeLists.txt
 
     - Clone Boost Pool into allocator/pool
+        - Implementation **should** be done
+            - Need raw pool allocators (not singleton ones).
+            - Singleton pattern sucks.
+        - Need to do...
 
     - Make iterators not depend on the allocator
         - LIBCXX interface.... Lols
