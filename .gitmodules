@@ -90,3 +90,19 @@
 	path = test/utility
 	url = https://github.com/pycpp/utility-test.git
 	branch = master
+[submodule "modules/internal"]
+	path = modules/internal
+	url = https://github.com/pycpp/internal.git
+	branch = master
+[submodule "modules/string"]
+	path = modules/string
+	url = https://github.com/pycpp/string.git
+	branch = master
+[submodule "test/modules/string"]
+	path = test/modules/string
+	url = https://github.com/pycpp/string-test.git
+	branch = master
+[submodule "test/modules/internal"]
+	path = test/modules/internal
+	url = https://github.com/pycpp/internal-test.git
+	branch = master
